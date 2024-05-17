@@ -204,7 +204,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
                 torch.save(weight_to_save, os.path.join(mm_projector_folder, f'{current_folder}.bin'))
             else:
                 torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
-        return
+
 
     if trainer.deepspeed:
         torch.cuda.synchronize()
