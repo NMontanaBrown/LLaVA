@@ -14,7 +14,7 @@ from transformers.trainer import (
 )
 from typing import List, Optional
 
-from llava.train.train import get_peft_state_maybe_zero_3, get_peft_state_non_lora_maybe_zero_3
+# from llava.train.train import get_peft_state_maybe_zero_3, get_peft_state_non_lora_maybe_zero_3
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):
@@ -154,7 +154,7 @@ class LLaVATrainer(Trainer):
         Setup the optimizer.
 
         We provide a reasonable default that works well. If you want to use something else, you can pass a tuple in the
-        Trainer's init through `optimizers`, or subclass and override this method in a subclass.
+        Trainer's init through optimizers, or subclass and override this method in a subclass.
         """
         if is_sagemaker_mp_enabled():
             return super().create_optimizer()
@@ -230,47 +230,34 @@ class LLaVATrainer(Trainer):
         return self.optimizer
 
     def _save_checkpoint(self, model, trial, metrics=None):
+        # Call the superclass method first to save the complete model checkpoint
+        super(LLaVATrainer, self)._save_checkpoint(model, trial, metrics)
+
         if getattr(self.args, 'tune_mm_mlp_adapter', False):
             from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
             checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
-
             run_dir = self._get_output_dir(trial=trial)
             output_dir = os.path.join(run_dir, checkpoint_folder)
 
-            # Only save Adapter
+            # Save the Adapter
             keys_to_match = ['mm_projector', 'vision_resampler']
             if getattr(self.args, "use_im_start_end", False):
                 keys_to_match.extend(['embed_tokens', 'embed_in'])
 
             weight_to_save = get_mm_adapter_state_maybe_zero_3(self.model.named_parameters(), keys_to_match)
-
             if self.args.local_rank == 0 or self.args.local_rank == -1:
-                self.model.config.save_pretrained(output_dir)
-                torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
-        else:
-            if self.args.lora_enable:
-                from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
-                checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
-                
-                run_dir = self._get_output_dir(trial=trial)
-                output_dir = os.path.join(self.args.output_dir, checkpoint_folder)
-                os.makedirs(output_dir, exist_ok=True)
-                state_dict = get_peft_state_maybe_zero_3(
-                    self.model.named_parameters(), self.args.lora_bias
-                )
-                non_lora_state_dict = get_peft_state_non_lora_maybe_zero_3(
-                    self.model.named_parameters()
-                )
-                if self.args.local_rank == 0 or self.args.local_rank == -1:
-                    print(f"save models to {output_dir} ")
-                    self.model.config.save_pretrained(output_dir)
-                    self.model.save_pretrained(output_dir, state_dict=state_dict)
-                    torch.save(non_lora_state_dict, os.path.join(output_dir, 'non_lora_trainables.bin'))
-            else:
-                super(LLaVATrainer, self)._save_checkpoint(model, trial, metrics)
+                torch.save(weight_to_save, os.path.join(output_dir, 'mm_projector.bin'))
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
+        # Call the superclass method first to save the complete model checkpoint
+        super(LLaVATrainer, self)._save(output_dir, state_dict)
+
         if getattr(self.args, 'tune_mm_mlp_adapter', False):
-            pass
-        else:
-            super(LLaVATrainer, self)._save(output_dir, state_dict)
+            # Save the Adapter
+            keys_to_match = ['mm_projector', 'vision_resampler']
+            if getattr(self.args, "use_im_start_end", False):
+                keys_to_match.extend(['embed_tokens', 'embed_in'])
+
+            weight_to_save = get_mm_adapter_state_maybe_zero_3(self.model.named_parameters(), keys_to_match)
+            if self.args.local_rank == 0 or self.args.local_rank == -1:
+                torch.save(weight_to_save, os.path.join(output_dir, 'mm_projector.bin'))

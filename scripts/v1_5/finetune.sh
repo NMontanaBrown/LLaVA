@@ -4,6 +4,7 @@ deepspeed llava/train/train_mem.py \
     --deepspeed ./scripts/zero3.json \
     --model_name_or_path lmsys/vicuna-13b-v1.5 \
     --version v1 \
+    --mm_projector_lr 2e-5 \
     --data_path /home/ubuntu/repos/LLaVa-Pretrain/ \
     --image_folder /home/ubuntu/repos/LLaVa-Pretrain/images \
     --vision_tower openai/clip-vit-large-patch14-336 \
