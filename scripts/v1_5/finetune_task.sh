@@ -2,10 +2,10 @@
 
 deepspeed llava/train/train_mem.py \
     --deepspeed ./scripts/zero3.json \
-    --model_name_or_path  /home/ubuntu/repos/LLaVA/checkpoints/llava-v1.5-13b-task/checkpoint-3 \
+    --model_name_or_path  /home/ubuntu/repos/LLaVA/checkpoints/llava-v1.5-7b-ft-full-rg \
     --version v1 \
-    --data_path /home/ubuntu/repos/LLaVA-Pretrain/blip_laion_cc_sbu_558k_small.json \
-    --image_folder /home/ubuntu/repos/LLaVA-Pretrain/images \
+    --data_path /home/ubuntu/cxrdata/conversation_dataset_train_remote.json  \
+    --image_folder /home/ubuntu/cxrdata/flat_images/flat_images \
     --vision_tower openai/clip-vit-large-patch14-336 \
     --mm_projector_lr 2e-5 \
     --tune_mm_mlp_adapter True \
@@ -16,14 +16,14 @@ deepspeed llava/train/train_mem.py \
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/llava-v1.5-13b-task \
+    --output_dir ./checkpoints/llava-v1.5-7b-finetune-task-rtt \
     --num_train_epochs 1 \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 1 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 1000 \
+    --save_steps 100 \
     --save_total_limit 1 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
